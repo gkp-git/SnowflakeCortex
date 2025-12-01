@@ -31,8 +31,34 @@ USE ROLE agentic_analytics_role;
         DIRECTORY = ( ENABLE = TRUE)
         ENCRYPTION = (   TYPE = 'SNOWFLAKE_SSE');
 
+--- File Source for Demo
     CREATE OR REPLACE GIT REPOSITORY SNOWFLAKECORTEX_REPO
         API_INTEGRATION = GIT_SNOWFLAKECORTEX_INTEGRATION
         ORIGIN = 'https://github.com/gkp-git/SnowflakeCortex';
-    LS @SNOWFLAKECORTEX_REPO/branches/main;
-    LS @SNOWFLAKECORTEX_REPO/branches/feature/CortexSVandAgentSetup;
+
+    ALTER GIT REPOSITORY SNOWFLAKECORTEX_REPO FETCH;
+    
+    LS @SNOWFLAKECORTEX_REPO/branches/main/AgentSample/data/dimensions;
+    LS @SNOWFLAKECORTEX_REPO/branches/main/AgentSample/data/facts;
+    LS @SNOWFLAKECORTEX_REPO/branches/main/AgentSample/data/salesforce;
+    
+
+--- Copy Files from Git Repo to Internal stage
+    COPY FILES
+    INTO @INTERNAL_DATA_STAGE/data/
+    FROM @SNOWFLAKECORTEX_REPO/branches/main/AgentSample/data/dimensions;
+
+    COPY FILES
+    INTO @INTERNAL_DATA_STAGE/data/
+    FROM @SNOWFLAKECORTEX_REPO/branches/main/AgentSample/data/facts;
+
+    COPY FILES
+    INTO @INTERNAL_DATA_STAGE/data/
+    FROM @SNOWFLAKECORTEX_REPO/branches/main/AgentSample/data/salesforce;
+
+-- Verify files were copied
+    LS @INTERNAL_DATA_STAGE;
+    ALTER STAGE INTERNAL_DATA_STAGE refresh;
+
+
+    

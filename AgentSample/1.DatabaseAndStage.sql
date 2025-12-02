@@ -60,5 +60,12 @@ USE ROLE agentic_analytics_role;
     LS @INTERNAL_DATA_STAGE;
     ALTER STAGE INTERNAL_DATA_STAGE refresh;
 
+-- Unstructured Docs
+    COPY FILES
+    INTO @INTERNAL_DATA_STAGE/data/
+    FROM @SNOWFLAKECORTEX_REPO/branches/main/AgentSample/data/unstructured_docs;
+
+    LS @INTERNAL_DATA_STAGE;
+    ALTER STAGE INTERNAL_DATA_STAGE refresh;
 
     

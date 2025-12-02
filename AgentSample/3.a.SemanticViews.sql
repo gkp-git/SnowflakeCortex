@@ -210,7 +210,62 @@ create or replace semantic view MARKETING_SEMANTIC_VIEW
   comment='Enhanced semantic view for marketing campaign analysis with complete revenue attribution and ROI tracking'
 ;
 
--- Display the semantic views
+create or replace semantic view HR_SEMANTIC_VIEW
+  tables (
+    DEPARTMENTS as DEPARTMENT_DIM primary key (DEPARTMENT_KEY) with synonyms=('departments','business units') comment='Department dimension for organizational analysis',
+    EMPLOYEES as EMPLOYEE_DIM primary key (EMPLOYEE_KEY) with synonyms=('employees','staff','workforce') comment='Employee dimension with personal information',
+    HR_RECORDS as HR_EMPLOYEE_FACT primary key (HR_FACT_ID) with synonyms=('hr data','employee records') comment='HR employee fact data for workforce analysis',
+    JOBS as JOB_DIM primary key (JOB_KEY) with synonyms=('job titles','positions','roles') comment='Job dimension with titles and levels',
+    LOCATIONS as LOCATION_DIM primary key (LOCATION_KEY) with synonyms=('locations','offices','sites') comment='Location dimension for geographic analysis'
+  )
+  relationships (
+    HR_TO_DEPARTMENTS as HR_RECORDS(DEPARTMENT_KEY) references DEPARTMENTS(DEPARTMENT_KEY),
+    HR_TO_EMPLOYEES as HR_RECORDS(EMPLOYEE_KEY) references EMPLOYEES(EMPLOYEE_KEY),
+    HR_TO_JOBS as HR_RECORDS(JOB_KEY) references JOBS(JOB_KEY),
+    HR_TO_LOCATIONS as HR_RECORDS(LOCATION_KEY) references LOCATIONS(LOCATION_KEY)
+  )
+  facts (
+    HR_RECORDS.ATTRITION_FLAG as attrition_flag with synonyms=('turnover_indicator','employee_departure_flag','separation_flag','employee_retention_status','churn_status','employee_exit_indicator') comment='Attrition flag. value is 0 if employee is currently active. 1 if employee quit & left the company. Always filter by 0 to show active employees unless specified otherwise',
+    HR_RECORDS.EMPLOYEE_RECORD as 1 comment='Count of employee detail change records',
+    HR_RECORDS.EMPLOYEE_SALARY as salary comment='Employee salary in dollars'
+  )
+  dimensions (
+    DEPARTMENTS.DEPARTMENT_KEY as DEPARTMENT_KEY,
+    DEPARTMENTS.DEPARTMENT_NAME as department_name with synonyms=('department','business unit','division') comment='Name of the department',
+    EMPLOYEES.EMPLOYEE_KEY as EMPLOYEE_KEY,
+    EMPLOYEES.EMPLOYEE_NAME as employee_name with synonyms=('employee','staff member','person','sales rep','manager','director','executive') comment='Name of the employee',
+    EMPLOYEES.GENDER as gender with synonyms=('gender','sex') comment='Employee gender',
+    EMPLOYEES.HIRE_DATE as hire_date with synonyms=('hire date','start date') comment='Date when employee was hired',
+    HR_RECORDS.DEPARTMENT_KEY as DEPARTMENT_KEY,
+    HR_RECORDS.EMPLOYEE_KEY as EMPLOYEE_KEY,
+    HR_RECORDS.HR_FACT_ID as HR_FACT_ID,
+    HR_RECORDS.JOB_KEY as JOB_KEY,
+    HR_RECORDS.LOCATION_KEY as LOCATION_KEY,
+    HR_RECORDS.RECORD_DATE as date with synonyms=('date','record date') comment='Date of the HR record',
+    HR_RECORDS.RECORD_MONTH as MONTH(date) comment='Month of the HR record',
+    HR_RECORDS.RECORD_YEAR as YEAR(date) comment='Year of the HR record',
+    JOBS.JOB_KEY as JOB_KEY,
+    JOBS.JOB_LEVEL as job_level with synonyms=('level','grade','seniority') comment='Job level or grade',
+    JOBS.JOB_TITLE as job_title with synonyms=('job title','position','role') comment='Employee job title',
+    LOCATIONS.LOCATION_KEY as LOCATION_KEY,
+    LOCATIONS.LOCATION_NAME as location_name with synonyms=('location','office','site') comment='Work location'
+  )
+  metrics (
+    HR_RECORDS.ATTRITION_COUNT as SUM(hr_records.attrition_flag) comment='Number of employees who left',
+    HR_RECORDS.AVG_SALARY as AVG(hr_records.employee_salary) comment='average employee salary',
+    HR_RECORDS.TOTAL_EMPLOYEES as COUNT(DISTINCT hr_records.employee_key) comment='Total number of employees',
+    HR_RECORDS.TOTAL_DEPARTMENTS as COUNT(DISTINCT hr_records.DEPARTMENT_KEY) comment='Total number of departments',
+    HR_RECORDS.TOTAL_JOBS as COUNT(DISTINCT hr_records.JOB_KEY) comment='Total number of jobs',
+    HR_RECORDS.TOTAL_LOCATIONS as COUNT(DISTINCT hr_records.LOCATION_KEY) comment='Total number of locations',
+    HR_RECORDS.FEMALE_EMPLOYEES as COUNT(DISTINCT CASE WHEN EMPLOYEES.GENDER = 'F' THEN hr_records.EMPLOYEE_KEY END) comment='Number of female employees',
+    HR_RECORDS.MALE_EMPLOYEES as COUNT(DISTINCT CASE WHEN EMPLOYEES.GENDER = 'M' THEN hr_records.EMPLOYEE_KEY END) comment='Number of male employees',
+    HR_RECORDS.TOTAL_SALARY_COST as SUM(hr_records.EMPLOYEE_SALARY) comment='Total salary cost'
+  )
+  comment='Semantic view for HR analytics and workforce management'
+  ;
+
+
+    -- Display the semantic views
 SHOW SEMANTIC VIEWS;
 
 
@@ -230,55 +285,3 @@ SHOW SEMANTIC VIEWS;
 -- WHERE total_revenue > 0
 -- ORDER BY total_revenue DESC
 -- ;
-
-
-create or replace semantic view HR_SEMANTIC_VIEW  
-    tables (  
-        EMPLOYEE_DIM AS AGENTIC_ANALYTICS_DB.AGENTIC_ANALYTICS_SCHEMA.EMPLOYEE_DIM primary key (EMPLOYEE_KEY) with synonyms=('employee','employees') comment='This table stores dimensional data about employees, including a unique identifier, name, gender, and hire date, providing a single source of truth for employee information.',  
-        DEPARTMENT_DIM AS AGENTIC_ANALYTICS_DB.AGENTIC_ANALYTICS_SCHEMA.DEPARTMENT_DIM primary key (DEPARTMENT_KEY) with synonyms=('department','departments') comment='This table stores information about the various departments within an organization, with each department uniquely identified by a department key and described by a department name.',  
-        JOB_DIM AS AGENTIC_ANALYTICS_DB.AGENTIC_ANALYTICS_SCHEMA.JOB_DIM primary key (JOB_KEY) with synonyms=('job','jobs') comment='This table stores information about different job roles within an organization, with a unique identifier (JOB_KEY) for each job, a descriptive title (JOB_TITLE), and a hierarchical level (JOB_LEVEL) indicating the job''s position within the organizational structure.',  
-        LOCATION_DIM AS AGENTIC_ANALYTICS_DB.AGENTIC_ANALYTICS_SCHEMA.LOCATION_DIM primary key (LOCATION_KEY) with synonyms=('location','locations') comment='This table stores unique locations with a corresponding unique identifier, allowing for efficient referencing and analysis of location-based data across the organization.',  
-        WORKFORCE_METRICS AS AGENTIC_ANALYTICS_DB.AGENTIC_ANALYTICS_SCHEMA.HR_EMPLOYEE_FACT comment='This table contains employee-related facts and metrics.'
-    )  
-	relationships (
-		WORKFORCE_METRICS_TO_EMPLOYEE as WORKFORCE_METRICS(EMPLOYEE_KEY) references EMPLOYEE_DIM(EMPLOYEE_KEY),
-		WORKFORCE_METRICS_TO_DEPARTMENT as WORKFORCE_METRICS(DEPARTMENT_KEY) references DEPARTMENT_DIM(DEPARTMENT_KEY),
-        WORKFORCE_METRICS_TO_JOB as WORKFORCE_METRICS(JOB_KEY) references JOB_DIM(JOB_KEY),
-		WORKFORCE_METRICS_TO_LOCATION as WORKFORCE_METRICS(LOCATION_KEY) references LOCATION_DIM(LOCATION_KEY)
-	)
-	facts (
-		WORKFORCE_METRICS.SALARY as SALARY
-	)
-    dimensions (  
-        EMPLOYEE_DIM.EMPLOYEE_KEY as EMPLOYEE_KEY comment='Unique identifier for each employee in the organization.',  
-        EMPLOYEE_DIM.EMPLOYEE_NAME as EMPLOYEE_NAME comment='The full name of the employee.',  
-        EMPLOYEE_DIM.GENDER as GENDER comment='The gender of the employee, either Female (F) or Male (M).',  
-        EMPLOYEE_DIM.HIRE_DATE as HIRE_DATE comment='Date on which the employee was hired by the company.',  
-        DEPARTMENT_DIM.DEPARTMENT_KEY as DEPARTMENT_KEY comment='Unique identifier for a department within the organization.',  
-        DEPARTMENT_DIM.DEPARTMENT_NAME as DEPARTMENT_NAME comment='The name of the department within the organization.',  
-        JOB_DIM.JOB_KEY as JOB_KEY comment='Unique identifier for a job or role within the organization.',  
-        JOB_DIM.JOB_LEVEL as JOB_LEVEL comment='The level or rank of an employee''s job within the organization.',  
-        JOB_DIM.JOB_TITLE as JOB_TITLE comment='The specific job or role held by an individual.',  
-        LOCATION_DIM.LOCATION_KEY as LOCATION_KEY comment='Unique identifier for a specific geographic location.',  
-        LOCATION_DIM.LOCATION_NAME as LOCATION_NAME comment='The name of the location.',
-        WORKFORCE_METRICS.DATE AS DATE comment='Record Date for HR Fact or employee detail change',
-        WORKFORCE_METRICS.EMPLOYEE_KEY as EMPLOYEE_KEY comment='Employee Key in HR Fact or Employee Detail Change',
-        WORKFORCE_METRICS.DEPARTMENT_KEY as DEPARTMENT_KEY comment='Department Key in HR Fact or Employee Detail Change',
-        WORKFORCE_METRICS.JOB_KEY as JOB_KEY comment='Job Key in HR Fact or Employee Detail Change',
-        WORKFORCE_METRICS.LOCATION_KEY as LOCATION_KEY comment='Location Key in HR Fact or Employee Detail Change'
-    )
-
-    metrics (  
-        WORKFORCE_METRICS.avg_tenure_months AS AVG(DATEDIFF('MONTH', EMPLOYEE_DIM.HIRE_DATE, WORKFORCE_METRICS.DATE)) comment='Average employee tenure in months' ,
-        WORKFORCE_METRICS.distinct_employees AS COUNT(DISTINCT WORKFORCE_METRICS.EMPLOYEE_KEY) comment='Count of unique employees' ,
-        WORKFORCE_METRICS.male_employees AS COUNT(DISTINCT CASE WHEN EMPLOYEE_DIM.GENDER = 'M' THEN WORKFORCE_METRICS.EMPLOYEE_KEY END) comment='Count of male employees' ,
-        WORKFORCE_METRICS.female_employees AS COUNT(DISTINCT CASE WHEN EMPLOYEE_DIM.GENDER = 'F' THEN WORKFORCE_METRICS.EMPLOYEE_KEY END) comment='Count of female employees' ,
-        WORKFORCE_METRICS.total_attrition AS ROUND(SUM(WORKFORCE_METRICS.ATTRITION_FLAG)) comment='Total employee attrition'  ,
-        WORKFORCE_METRICS.salary_75th_percentile AS PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY WORKFORCE_METRICS.SALARY) comment='75th percentile of salary' ,
-        WORKFORCE_METRICS.min_salary AS MIN(WORKFORCE_METRICS.SALARY) comment='Minimum salary' , 
-        WORKFORCE_METRICS.max_salary AS MAX(WORKFORCE_METRICS.SALARY) comment='Maximum salary' , 
-        WORKFORCE_METRICS.distinct_locations AS COUNT(DISTINCT WORKFORCE_METRICS.LOCATION_KEY) comment='Count of unique locations' ,
-        WORKFORCE_METRICS.salary_90th_percentile AS PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY WORKFORCE_METRICS.SALARY) comment='90th percentile of salary' ,
-        WORKFORCE_METRICS.avg_tenure_days AS AVG(DATEDIFF('DAY', EMPLOYEE_DIM.HIRE_DATE, WORKFORCE_METRICS.DATE)) comment='Average employee tenure in days'   
-    )  
-    comment='This semantic view uses HR Data';  

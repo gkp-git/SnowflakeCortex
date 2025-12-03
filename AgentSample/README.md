@@ -1,8 +1,19 @@
 # Snowflake Intelligence Demo
 
 
-Note **“The components were originally created based on the notebook available at [Snowflake Semantic View and Agentic Analytics](https://github.com/Snowflake-Labs/snowflake-demo-notebooks), which in turn leverages the [Snowflake\_AI\_DEMO repository](https://github.com/NickAkincilar/Snowflake_AI_DEMO).”**
+Note 1 : **“The components were originally created based on the notebook available at [Snowflake Semantic View and Agentic Analytics](https://github.com/Snowflake-Labs/snowflake-demo-notebooks), which in turn leverages the [Snowflake\_AI\_DEMO repository](https://github.com/NickAkincilar/Snowflake_AI_DEMO).”**
 
+
+Notes  - Needs substantial work to get this into a demo state
+This is a good sample for a demo on agents, semantic views and cortex search capabilities; but wouldnt use this as a demo.
+
+1. The PDFs in the unstructured docs do not match the numbers in the database(For e.g Finance)
+2. HR Employee Records as a Fact or the related semantic view - isnt a good serving layer and can cause hallucinations for e.g headcount is derived as a total count on the records tables, instead of using latest records per employee.
+3. Issue with the Optional Proc - for creating pre-signed URLs - needs review when using with the agent, seems to work on direct tests
+
+
+
+Below Details are from the Original ReadMe
 
 This project demonstrates the comprehensive Snowflake Intelligence capabilities including:
 - **Cortex Analyst** (Text-to-SQL via semantic views)
